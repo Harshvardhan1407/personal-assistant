@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Testing Chatbot</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="OpenAI Chatbot">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+
+        ::-webkit-scrollbar {
+            width: 2px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+            background: transparent;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2c2c2c;
+            color: #f1f1f1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            padding: 10px;
+            text-align: center;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            font-size: 28px;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background-color: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .message {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            width: 80%;
+            margin-bottom: 10px;
+        }
+
+        .message .bot {
+            padding: 10px;
+            font-size: 17px;
+            border: none;
+            width: 80%;
+            background: linear-gradient(45deg, #2a5298, #1e3c72);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .message .user {
+            padding: 10px;
+            font-size: 17px;
+            border: none;
+            width: 80%;
+            background: linear-gradient(45deg, #1abc9c, #16a085);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .input {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            text-align: center;
+            background: #1e3c72;
+            color: #f1f1f1;
+            font-size: 20px;
+            box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .input textarea {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            font-family: 'Roboto', sans-serif;
+            border: none;
+            background: #333333;
+            color: #f1f1f1;
+            resize: none;
+            border-radius: 10px;
+            width: 900px;
+            height: auto;
+            max-height: 100px;
+            overflow-y: auto;
+            float: left;
+        }
+
+        .input input[type=submit] {
+            flex: 0;
+            padding: 10px;
+            font-size: 17px;
+            border: none;
+            background: #2a5298;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-left: 10px;
+        }
+
+        .input input[type=submit]:hover {
+            background: #1e3c72;
+        }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="header">
+        <h1>Chatbot</h1>
+    </div>
+    <div class="content">
+        <div class="messages">
+            <!-- Messages will be displayed here -->
+        </div>
+        <div class="input">
+            <form action="" method="post" onsubmit="return false;">
+                <textarea name="message" placeholder="Type your message here" autocomplete="off" autofocus></textarea>
+                <input type="submit" value="Send">
+            </form>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        function toggleInputElements(disabled) {
+            $('textarea[name=message]').prop('disabled', disabled);
+            $('input[type=submit]').prop('disabled', disabled);
+        }
+
+        function adjustTextareaHeight() {
+            var textarea = $('textarea[name=message]')[0];
+            textarea.style.height = 'auto';
+            textarea.style.height = (Math.min(textarea.scrollHeight, 100)) + 'px';
+            document.body.scrollTop = document.body.scrollHeight;
+        }
+
+        $('form').submit(function (e) {
+            e.preventDefault();
+            var userMessage = $('textarea[name=message]').val();
+
+            if (userMessage === '') {
+                return;
+            }
+
+            toggleInputElements(true);
+            $('.messages').append('<div class="message"><div class="user">' + userMessage.replace(/\n/g, '<br>') + '</div></div>');
+            $('textarea[name=message]').val('');
+            adjustTextareaHeight();
+            $('.messages').scrollTop($('.messages')[0].scrollHeight);
+
+            $.post("/chat", {
+                prompt: userMessage
+            }, function(response) {
+                if (response.startsWith("Error:")) {
+                    $('.messages').append('<div class="message"><div class="bot">Something went wrong</div></div>');
+                } else {
+                    $('.messages').append('<div class="message"><div class="bot">' + response.replace(/\n/g, '<br>') + '</div></div>');
+                }
+                $('.messages').scrollTop($('.messages')[0].scrollHeight);
+                toggleInputElements(false);
+            }).fail(function() {
+                $('.messages').append('<div class="message"><div class="bot">Something went wrong</div></div>');
+                $('.messages').scrollTop($('.messages')[0].scrollHeight);
+                toggleInputElements(false);
+            });
+        });
+
+        $('textarea[name=message]').on('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                $('form').submit();
+            } else if (e.key === 'Enter' && e.shiftKey) {
+                document.execCommand('insertText', false, '\n');
+                adjustTextareaHeight();
+                e.preventDefault();
+            }
+        });
+
+        adjustTextareaHeight();
+    </script>
+</body>
+</html>
