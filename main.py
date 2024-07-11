@@ -1,7 +1,7 @@
 from openai import OpenAI
 import os
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-from common import crawl , data_cleaning, ada_embedding
+# from common import crawl , data_cleaning, ada_embedding
 import numpy as np
 from ast import literal_eval
 import requests
@@ -55,6 +55,18 @@ class OpenAIBot:
             return json.dumps({"location": "Paris", "temperature": "22", "unit": unit})
         else:
             return json.dumps({"location": location, "temperature": "unknown"})
+        
+    def power_cut(self):
+        output = self.consumer_details()
+        values = {}
+        if float(output['resource']['balance_amount'])<0:
+            values['balance'] = output['resource']['balance_amount']
+        if output['resource']['overload_grid']=="y":
+            values["overload_grid"] = output['resource']['overload_grid'],
+        if output['resource']['overload_dg']=="y":
+            values["overload_dg"]= output['resource']['overload_dg']
+
+        return values
     
     def get_cat_fact(self):
         url = "https://catfact.ninja/fact"
@@ -123,6 +135,17 @@ class OpenAIBot:
                             "properties": {},  # No properties needed as it takes no parameters
                             },
                     },
+                },
+                 {
+                    "type": "function",
+                    "function": {
+                        "name": "power_cut",
+                        "description": "power cut or electricity outage or balance inquiry",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },
+                    },
                 }
             ]
 
@@ -137,10 +160,10 @@ class OpenAIBot:
                 tool_choice="auto"  # auto is default, but we'll be explicit
             )
             response_message = response.choices[0].message
-            print("response_message:",response_message.content)
+            # print("response_message:",response_message.content)
             print("done1")
             self.add_message("assistant", response_message.content)
-            print(response_message)
+            # print(response_message)
             # Check if the model wanted to call a function
             # tool_calls = response_message.get('tool_calls', [])
             tool_calls = response_message.tool_calls
@@ -150,6 +173,7 @@ class OpenAIBot:
                      "get_population": self.get_population,
                      "get_cat_fact": self.get_cat_fact,
                      "consumer_details":self.consumer_details,
+                     "power_cut": self.power_cut,
                 }  # only one function in this example, but you can have multiple
 
                 # Extend conversation with assistant's reply
@@ -167,9 +191,11 @@ class OpenAIBot:
                         function_response = function_to_call(
                             year=function_args.get("year")
                             )
+                    # elif function_name == "power_cut":
+                    #     function_response = function_to_call()
+                    #     print(function_response)
                     else:
-                        function_response = function_to_call(),
-
+                        function_response = function_to_call()
                     
                     print("done3")
                       # Ensure function response is not None
