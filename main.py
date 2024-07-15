@@ -6,6 +6,7 @@ import numpy as np
 from ast import literal_eval
 import requests
 import json
+import re
 
 class OpenAIBot:
     def __init__(self, engine):
@@ -24,7 +25,7 @@ class OpenAIBot:
     def consumer_details(self):
         try:
             """get consumer details"""
-            url = "https://vapt-mp.myxenius.com/thirdparty/api/login?login_id=2121901&password=2121901"
+            url = os.getenv("vapt_api") 
             response = requests.get(url )
 
             if response.status_code == 200:
@@ -56,14 +57,18 @@ class OpenAIBot:
         else:
             return json.dumps({"location": location, "temperature": "unknown"})
         
+    def format_currency_as_rupees(self,response):
+        # Use regex to find and replace dollar amounts with rupees
+        return re.sub(r'\$\s*([\d,]+(?:\.\d+)?)', r'₹\1', response)
+    
     def power_cut(self):
         output = self.consumer_details()
         values = {}
         if float(output['resource']['balance_amount'])<0:
             values['balance'] = output['resource']['balance_amount']
-        if output['resource']['overload_grid']=="y":
+        elif output['resource']['overload_grid']=="y":
             values["overload_grid"] = output['resource']['overload_grid'],
-        if output['resource']['overload_dg']=="y":
+        elif output['resource']['overload_dg']=="y":
             values["overload_dg"]= output['resource']['overload_dg']
 
         return values
@@ -98,9 +103,7 @@ class OpenAIBot:
                     },
                     "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
                 },
-                "required": ["location"],
-            },
-            },
+                "required": ["location"],},},
             },
                 {
                     "type": "function",
@@ -133,8 +136,7 @@ class OpenAIBot:
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
-                            },
-                    },
+                            },},
                 },
                  {
                     "type": "function",
@@ -144,15 +146,13 @@ class OpenAIBot:
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
-                            },
-                    },
+                            },},
                 }
             ]
 
-
         try:
             # Make a request to the API using the chat-based endpoint with conversation context
-            print("done0")
+            print("done: 0")
             response = client.chat.completions.create( 
                 model=self.engine, 
                 messages=self.conversation,
@@ -160,8 +160,9 @@ class OpenAIBot:
                 tool_choice="auto"  # auto is default, but we'll be explicit
             )
             response_message = response.choices[0].message
+            # message = format_currency_as_rupees(response_message)
             # print("response_message:",response_message.content)
-            print("done1")
+            print("done: 1")
             self.add_message("assistant", response_message.content)
             # print(response_message)
             # Check if the model wanted to call a function
@@ -174,10 +175,10 @@ class OpenAIBot:
                      "get_cat_fact": self.get_cat_fact,
                      "consumer_details":self.consumer_details,
                      "power_cut": self.power_cut,
-                }  # only one function in this example, but you can have multiple
+                }  
 
                 # Extend conversation with assistant's reply
-                print("done2")
+                print("done: 2")
                 for tool_call in tool_calls:
                     function_name = tool_call.function.name
                     function_to_call = available_functions[function_name]
@@ -191,13 +192,10 @@ class OpenAIBot:
                         function_response = function_to_call(
                             year=function_args.get("year")
                             )
-                    # elif function_name == "power_cut":
-                    #     function_response = function_to_call()
-                    #     print(function_response)
                     else:
                         function_response = function_to_call()
                     
-                    print("done3")
+                    print("done: 3")
                       # Ensure function response is not None
                     if function_response is not None:
                         # print(self.conversation)
@@ -213,12 +211,13 @@ class OpenAIBot:
                         )            
                     else:
                         print(f"Function {function_name} returned None for arguments {function_args}")
-                print("done4")
+                print("done: 4")
                 # Get a new response from the model where it can see the function response
                 second_response = client.chat.completions.create( model=self.engine, messages=self.conversation)
                 assistant_response = second_response.choices[0].message.content
-                self.add_message("assistant", assistant_response)
-                return assistant_response
+                message = self.format_currency_as_rupees(assistant_response)
+                self.add_message("assistant", message)
+                return message
 
             # Return the initial response if no tool call was made
             return response_message.content
@@ -226,39 +225,3 @@ class OpenAIBot:
             print(f'Error Generating Response: {e}')
             return None
 
-
-########################################
-
-# class OpenAIBot:
-#     def __init__(self,engine):
-#         # Initialize conversation with a system message
-#         self.conversation = [{"role": "system", "content": "You are a helpful assistant."}]
-#         self.engine = engine
-#     def add_message(self, role, content):
-#         # Adds a message to the conversation.
-#         self.conversation.append({"role": role, "content": content})
-#     def generate_response(self, prompt):
-#         # Add user prompt to conversation
-#         self.add_message("user", prompt)
-#         try:
-#             # Make a request to the API using the chat-based endpoint with conversation context
-#             response = client.chat.completions.create( model=self.engine, messages=self.conversation)
-#             # Extract the response
-#             assistant_response = response.choices[0].message.content
-#             # Add assistant response to conversation
-#             self.add_message("assistant", assistant_response)
-#             # Return the response
-#             return assistant_response
-#         except:
-#             print('Error Generating Response!')
-# def embedding():
-#     try:
-#         full_url = os.getenv("url")
-#         # crawl(full_url)
-#         data_cleaning()
-#         ada_embedding()
-#         # print(df['fname'].tail())
-#     except Exception as e:
-#         print("embedding error",e)
-
-# embedding()

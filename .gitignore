@@ -1,3 +1,6 @@
 .env
 botenv
-_pycache_/
+/__pycache__
+/output
+/processed
+/text
