@@ -7,6 +7,11 @@ from ast import literal_eval
 import requests
 import json
 import re
+import logging
+
+logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='chatbot.log', filemode='w', level=logging.INFO,format='%(asctime)s %(message)s')
 
 class OpenAIBot:
     def __init__(self, engine):
@@ -22,6 +27,10 @@ class OpenAIBot:
         else:
             print(f"Attempted to add a message with null content for role {role}")
         # self.conversation.append({"role": role, "content": content})
+    
+    def json_response(self):
+        return "these informations are classified, i can help you with track your electricity consumption ,monitor your consumption, recharge details of your prepaid meters and also compare your electricity bills over time"
+    
     def consumer_details(self):
         try:
             """get consumer details"""
@@ -29,7 +38,8 @@ class OpenAIBot:
             response = requests.get(url )
 
             if response.status_code == 200:
-                print("consumer details success")
+                logger.info('consumer details success')
+                # print("consumer details success")
                 return response.json() 
         except Exception as e:
             print("consumer details error:", e)
@@ -70,7 +80,7 @@ class OpenAIBot:
             values["overload_grid"] = output['resource']['overload_grid'],
         elif output['resource']['overload_dg']=="y":
             values["overload_dg"]= output['resource']['overload_dg']
-
+        logger.info('power cut details success')
         return values
     
     def get_cat_fact(self):
@@ -147,12 +157,22 @@ class OpenAIBot:
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
                             },},
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "json_response",
+                        "description": "give me json or api response ",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},
                 }
             ]
 
         try:
             # Make a request to the API using the chat-based endpoint with conversation context
-            print("done: 0")
+            # print("done: 0")
             response = client.chat.completions.create( 
                 model=self.engine, 
                 messages=self.conversation,
@@ -162,7 +182,7 @@ class OpenAIBot:
             response_message = response.choices[0].message
             # message = format_currency_as_rupees(response_message)
             # print("response_message:",response_message.content)
-            print("done: 1")
+            # print("done: 1")
             self.add_message("assistant", response_message.content)
             # print(response_message)
             # Check if the model wanted to call a function
@@ -175,10 +195,11 @@ class OpenAIBot:
                      "get_cat_fact": self.get_cat_fact,
                      "consumer_details":self.consumer_details,
                      "power_cut": self.power_cut,
+                     "json_response": self.json_response,
                 }  
 
                 # Extend conversation with assistant's reply
-                print("done: 2")
+                # print("done: 2")
                 for tool_call in tool_calls:
                     function_name = tool_call.function.name
                     function_to_call = available_functions[function_name]
@@ -195,13 +216,12 @@ class OpenAIBot:
                     else:
                         function_response = function_to_call()
                     
-                    print("done: 3")
+                    # print("done: 3")
                       # Ensure function response is not None
                     if function_response is not None:
                         # print(self.conversation)
                         self.conversation.append(
-                            {
-                                "role": "assistant",
+                            {   "role": "assistant",
                                 "content": json.dumps({
                                     "tool_call_id": tool_call.id,
                                     "name": function_name,
@@ -211,7 +231,7 @@ class OpenAIBot:
                         )            
                     else:
                         print(f"Function {function_name} returned None for arguments {function_args}")
-                print("done: 4")
+                # print("done: 4")
                 # Get a new response from the model where it can see the function response
                 second_response = client.chat.completions.create( model=self.engine, messages=self.conversation)
                 assistant_response = second_response.choices[0].message.content
