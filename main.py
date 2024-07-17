@@ -8,9 +8,10 @@ import requests
 import json
 import re
 import logging
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logging.basicConfig(filename='chatbot.log', filemode='w', level=logging.INFO,format='%(asctime)s %(message)s')
 
 class OpenAIBot:
@@ -34,15 +35,16 @@ class OpenAIBot:
     def consumer_details(self):
         try:
             """get consumer details"""
-            url = os.getenv("vapt_api") 
+            url = os.getenv("login_api") 
             response = requests.get(url )
-
             if response.status_code == 200:
+                response_data = response.json()
                 logger.info('consumer details success')
-                # print("consumer details success")
-                return response.json() 
+                keys_to_fetch = ['consumer_name',"consumer_mobile_no","consumer_email_id","balance_amount",'last_recharge_time', 'last_coupon_number', 'last_coupon_amount','dg_reading', 'grid_reading',"grid_sanctioned_load","overload_grid","overload_dg"]
+                data = {key: response_data['resource'][key] for key in keys_to_fetch}
+                return data
         except Exception as e:
-            print("consumer details error:", e)
+            logger.info("consumer details error:", e)
 
     def get_population(self,year):
         """get usa population"""
@@ -51,49 +53,75 @@ class OpenAIBot:
     
         if response.status_code == 200:
             # print("Success:", response.json())
-            print("usa popluation data success")
+            logger.info("usa popluation data success")
             return response.json()
         else:
-            print("Error in api:", response.status_code, response.text)
+            logger.info("Error in api:", response.status_code, response.text)
     
+    def daily_data(self):
+        """ daily data"""
+        try:
+            url = os.getenv("daily_api")
+            response = requests.get(url)
+            if response.status_code == 200:
+                logger.info("daily data fetched")
+                return response.json()
+        except Exception as e:
+            logger.info("error in daily data fetching",e)
+
+    def monthly_data(self):
+        """ monthly data"""
+        try:
+            url = os.getenv("monthly_api")
+            response = requests.get(url)
+            if response.status_code == 200:
+                logger.info("monthly data fetched")
+                return response.json()
+        except Exception as e:
+            logger.info("error in monthly data fetching",e)
+
     def get_current_weather(self, location, unit="celcius"):
         """Get the current weather in a given location"""
-        if "tokyo" in location.lower():
-            return json.dumps({"location": "Tokyo", "temperature": "10", "unit": unit})
-        elif "san francisco" in location.lower():
-            return json.dumps({"location": "San Francisco", "temperature": "32", "unit": unit})
-        elif "paris" in location.lower():
-            return json.dumps({"location": "Paris", "temperature": "22", "unit": unit})
-        else:
-            return json.dumps({"location": location, "temperature": "unknown"})
-        
+        try:
+            if "tokyo" in location.lower():
+                return json.dumps({"location": "Tokyo", "temperature": "10", "unit": unit})
+            elif "san francisco" in location.lower():
+                return json.dumps({"location": "San Francisco", "temperature": "32", "unit": unit})
+            elif "paris" in location.lower():
+                return json.dumps({"location": "Paris", "temperature": "22", "unit": unit})
+            else:
+                return json.dumps({"location": location, "temperature": "unknown"})
+        except Exception as e:
+            logger.info("error in weather fetching",e)
+
     def format_currency_as_rupees(self,response):
         # Use regex to find and replace dollar amounts with rupees
         return re.sub(r'\$\s*([\d,]+(?:\.\d+)?)', r'₹\1', response)
     
     def power_cut(self):
-        output = self.consumer_details()
-        values = {}
-        if float(output['resource']['balance_amount'])<0:
-            values['balance'] = output['resource']['balance_amount']
-        elif output['resource']['overload_grid']=="y":
-            values["overload_grid"] = output['resource']['overload_grid'],
-        elif output['resource']['overload_dg']=="y":
-            values["overload_dg"]= output['resource']['overload_dg']
-        logger.info('power cut details success')
-        return values
-    
+        try:
+            output = self.consumer_details()
+            values = {}
+            if float(output['balance_amount'])<0:
+                values['balance'] = output['balance_amount']
+            if output['overload_grid']=="y":
+                values["overload_grid"] = output['overload_grid'],
+            elif output['overload_dg']=="y":
+                values["overload_dg"]= output['overload_dg']
+            logger.info('power cut details success')
+            return values
+        except Exception as e:
+            logger.info("error in power cut details",e)
+
     def get_cat_fact(self):
         url = "https://catfact.ninja/fact"
         response = requests.get(url )
-    
         if response.status_code == 200:
             # print("Success:", response.json())
-            print("cat fact data sucess")
-
+            logger.info("cat fact data sucess")
             return response.json()
         else:
-            print("Error in cat fact:", response.status_code, response.text)
+            logger.info("Error in cat fact:", response.status_code, response.text)
 
     def generate_response(self, prompt):
         # Add user prompt to conversation
@@ -109,12 +137,9 @@ class OpenAIBot:
                 "properties": {
                     "location": {
                         "type": "string",
-                        "description": "The city and state, e.g. San Francisco, CA",
-                    },
-                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-                },
-                "required": ["location"],},},
-            },
+                        "description": "The city and state, e.g. San Francisco, CA",},
+                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},},
+                "required": ["location"],},},},
                 {
                     "type": "function",
                     "function": {
@@ -124,9 +149,7 @@ class OpenAIBot:
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
                             "required": ["year"]
-                            },
-                    },
-                },
+                            },},},
                 {
                     "type": "function",
                     "function": {
@@ -135,19 +158,16 @@ class OpenAIBot:
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
-                            },
-                    },
-                },
+                            },},},
                 {
                     "type": "function",
                     "function": {
                         "name": "consumer_details",
-                        "description": "give me datails of or consumer details",
+                        "description": "Fetches consumer details or grid_reading based on the request.",
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
-                            },},
-                },
+                            },},},
                  {
                     "type": "function",
                     "function": {
@@ -156,8 +176,7 @@ class OpenAIBot:
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
-                            },},
-                },
+                            },},},
                 {
                     "type": "function",
                     "function": {
@@ -166,8 +185,25 @@ class OpenAIBot:
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
-                            },},
-                }
+                            },},},
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "daily_data",
+                        "description": "give me my daily data",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "monthly_data",
+                        "description": "give me this month data or monthly data",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
             ]
 
         try:
@@ -196,6 +232,8 @@ class OpenAIBot:
                      "consumer_details":self.consumer_details,
                      "power_cut": self.power_cut,
                      "json_response": self.json_response,
+                     "monthly_data":self.monthly_data,
+                     "daily_data": self.daily_data,
                 }  
 
                 # Extend conversation with assistant's reply
@@ -217,7 +255,7 @@ class OpenAIBot:
                         function_response = function_to_call()
                     
                     # print("done: 3")
-                      # Ensure function response is not None
+                    # Ensure function response is not None
                     if function_response is not None:
                         # print(self.conversation)
                         self.conversation.append(
