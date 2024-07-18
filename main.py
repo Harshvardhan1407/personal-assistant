@@ -163,7 +163,7 @@ class OpenAIBot:
                     "type": "function",
                     "function": {
                         "name": "consumer_details",
-                        "description": "Fetches consumer details or grid_reading based on the request.",
+                        "description": "Fetches consumer details, grid_reading, balance based on the request.",
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
@@ -172,7 +172,7 @@ class OpenAIBot:
                     "type": "function",
                     "function": {
                         "name": "power_cut",
-                        "description": "power cut or electricity outage or balance inquiry",
+                        "description": "power cut or electricity outage",
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
@@ -190,7 +190,7 @@ class OpenAIBot:
                     "type": "function",
                     "function": {
                         "name": "daily_data",
-                        "description": "give me my daily data",
+                        "description": "give me this day or  daily data",
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
