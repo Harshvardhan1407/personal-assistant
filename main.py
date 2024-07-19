@@ -26,25 +26,101 @@ class OpenAIBot:
             self.conversation.append({"role": role, "content": content})
             # print("conversation:", self.conversation)
         else:
-            print(f"Attempted to add a message with null content for role {role}")
+            logger.info(f"Attempted to add a message with null content for role {role}")
         # self.conversation.append({"role": role, "content": content})
     
     def json_response(self):
         return "these informations are classified, i can help you with track your electricity consumption ,monitor your consumption, recharge details of your prepaid meters and also compare your electricity bills over time"
     
-    def consumer_details(self):
+    def login_api(self):
         try:
-            """get consumer details"""
             url = os.getenv("login_api") 
             response = requests.get(url )
             if response.status_code == 200:
-                response_data = response.json()
-                logger.info('consumer details success')
-                keys_to_fetch = ['consumer_name',"consumer_mobile_no","consumer_email_id","balance_amount",'last_recharge_time', 'last_coupon_number', 'last_coupon_amount','dg_reading', 'grid_reading',"grid_sanctioned_load","overload_grid","overload_dg"]
-                data = {key: response_data['resource'][key] for key in keys_to_fetch}
-                return data
+                return response.json()['resource']
+            
+            logger.info("login_api success")
         except Exception as e:
-            logger.info("consumer details error:", e)
+            logger.info("error fetching login api:",e)
+
+    def consumer_details(self):
+        try:
+            data = self.login_api()
+            keys_to_fetch = ['location_id',"flat_number",'consumer_name',"consumer_mobile_no","consumer_email_id","balance_amount"]#,"balance_amount",'last_recharge_time', 'last_coupon_number', 'last_coupon_amount','dg_reading', 'grid_reading',"grid_sanctioned_load","overload_grid","overload_dg"]
+            output = {key: data[key] for key in keys_to_fetch}
+            # Step 1: Add the new key with the value of the old key
+            output["login_id"] = output["location_id"]
+            del output["location_id"]
+            logger.info("consumer_details success")
+            return output
+        
+        except Exception as e:
+            logger.info("error fetching consumer_details:",e)
+    
+    def notifiation(self):
+        try:
+            data = self.login_api()
+            keys_to_fetch = ['notification_email', 'notification_sms', 'notification_ivrs', 'notification_app_load', 'notification_app_balance', 'low_bal_alert', 'notification_app_esource', 'notification_app_unit_consumption', 'alert_daily_consumption_grid', 'alert_daily_consumption_dg','power_cut_restore_notification', 'recharge_notification', 'last_reading_alert_notification']
+            output = {key: data[key] for key in keys_to_fetch}
+            logger.info("notification data success")
+            return output
+
+        except Exception as e:
+            logger.info("error fetching notification_details:",e)
+    
+    def balance_recharge(self):
+        try:
+            data  = self.login_api()
+            keys_to_fetch = ['balance_amount', 'last_recharge_time', 'last_coupon_amount',]#'last_coupon_number'
+            output = {key: data[key] for key in keys_to_fetch}
+            logger.info("balance_recharge data success")
+            return output
+        except Exception as e:
+            logger.info("error fetching balance and recharge:",e)    
+    
+    def consumption(self):
+        try:
+            data  = self.login_api()
+            keys_to_fetch = ['dg_reading', 'grid_reading', 'last_reading_updated', 'daily_dg_unit', 'daily_grid_unit', 'monthly_dg_unit', 'monthly_grid_unit', 'daily_dg_amount', 'daily_grid_amount', 'fix_charges_monthly', 'monthly_dg_amount', 'monthly_grid_amount', 'fix_charges','energy_source', 'last_reading_updated_dg',]
+            output = {key: data[key] for key in keys_to_fetch}
+            logger.info("consumption data success")
+            return output
+        except Exception as e:
+            logger.info("error fetching consumption details:",e)  
+
+    def site_details(self):
+        try:
+            data  = self.login_api()
+            keys_to_fetch = ['site_id', 'site_name', 'site_address', 'site_city', 'site_state', 'site_country', 'site_zipcode', 'site_supervisor_name',]
+            output = {key: data[key] for key in keys_to_fetch}
+            logger.info("site_details data success")
+            return output
+        except Exception as e:
+            logger.info("error fetching site details:",e)
+    
+    def costumer_support(self):
+        try:
+            data  = self.login_api()
+            keys_to_fetch = ['site_supervisor_name', 'site_supervisor_contact_no', 'site_supervisor_email_id', 'site_support_concern_name', 'site_support_contact_no', 'site_support_email_id',]
+            output = {key: data[key] for key in keys_to_fetch}
+            logger.info("costumer support data success")
+            return output
+        except Exception as e:
+            logger.info("error fetching costumer support:",e)  
+
+    # def consumer_details(self):
+    #     try:
+    #         """get consumer details"""
+    #         url = os.getenv("login_api") 
+    #         response = requests.get(url )
+    #         if response.status_code == 200:
+    #             response_data = response.json()
+    #             logger.info('consumer details success')
+    #             keys_to_fetch = ['consumer_name',"consumer_mobile_no","consumer_email_id","balance_amount",'last_recharge_time', 'last_coupon_number', 'last_coupon_amount','dg_reading', 'grid_reading',"grid_sanctioned_load","overload_grid","overload_dg"]
+    #             data = {key: response_data['resource'][key] for key in keys_to_fetch}
+    #             return data
+    #     except Exception as e:
+    #         logger.info("consumer details error:", e)
 
     def get_population(self,year):
         """get usa population"""
@@ -100,7 +176,7 @@ class OpenAIBot:
     
     def power_cut(self):
         try:
-            output = self.consumer_details()
+            output = self.login_api()
             values = {}
             if float(output['balance_amount'])<0:
                 values['balance'] = output['balance_amount']
@@ -168,6 +244,59 @@ class OpenAIBot:
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
                             },},},
+# 1
+                 {
+                    "type": "function",
+                    "function": {
+                        "name": "notifiation",
+                        "description": "what notification are enabled for me",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
+# 2
+                 {
+                    "type": "function",
+                    "function": {
+                        "name": "balance_recharge",
+                        "description": "give me my balance or recharge related query",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
+# 3
+                 {
+                    "type": "function",
+                    "function": {
+                        "name": "consumption",
+                        "description": "Retrieve detailed consumption information including generator and grid readings, daily and monthly units, amounts, fixed charges, and last updated timestamps.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
+# 4
+                 {
+                    "type": "function",
+                    "function": {
+                        "name": "site_details",
+                        "description": "what are my site details",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
+
+# 5 
+                 {
+                    "type": "function",
+                    "function": {
+                        "name": "costumer_support",
+                        "description": "give me my customer support details",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},  # No properties needed as it takes no parameters
+                            },},},
+
+
                  {
                     "type": "function",
                     "function": {
@@ -234,6 +363,12 @@ class OpenAIBot:
                      "json_response": self.json_response,
                      "monthly_data":self.monthly_data,
                      "daily_data": self.daily_data,
+                     "notifiation": self.notifiation,
+                     "balance_recharge": self.balance_recharge,
+                     "consumption": self.consumption,
+                     "site_details": self.site_details,
+                     "costumer_support":self.costumer_support,
+
                 }  
 
                 # Extend conversation with assistant's reply
