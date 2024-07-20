@@ -285,7 +285,6 @@ class OpenAIBot:
                             "properties": {},  # No properties needed as it takes no parameters
                             },},},
 
-# 5 
                  {
                     "type": "function",
                     "function": {
