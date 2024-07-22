@@ -17,7 +17,26 @@ logging.basicConfig(filename='chatbot.log', filemode='w', level=logging.INFO,for
 class OpenAIBot:
     def __init__(self, engine):
         # Initialize conversation with a system message
-        self.conversation = [{"role": "system", "content": "You are a helpful assistant."}]
+        # self.conversation = [{"role": "system", "content": "You are a helpful assistant."}]
+        self.conversation = [{
+                "role": "system",
+                "content": """
+                You are an electric meter customer service assistant. Your role is to help users find details about their electric meter consumption, balance, and personal information politely and competently.
+                
+                Follow these instructions to assist users:
+                - parent company name is Radius.
+                - Greet the user warmly.
+                - Understand their query regarding consumption, balance, or personal information.
+                - Retrieve and provide the requested information accurately.
+                - Don't try to give generic response.
+                - Assist with any other related queries or close the conversation politely.
+                
+                Ensure that details about tool call functions, IDs, or JSON responses are not shown to the user.  Instead, present the user with clear and helpful information in a natural language format. Always give money amount in rupee and if values are in negative shown them with negative sign and be direct with those values.
+                If you don't have the infomation, tell the user to contact support or provider team.
+                """
+            }
+            ]
+
         self.engine = engine
 
     def add_message(self, role, content):
@@ -180,11 +199,11 @@ class OpenAIBot:
             values = {}
             if float(output['balance_amount'])<0:
                 values['balance'] = output['balance_amount']
-            if output['overload_grid']=="y":
+            if output['overload_grid'] in ["y", "Y"]:
                 values["overload_grid"] = output['overload_grid'],
-            elif output['overload_dg']=="y":
+            elif output['overload_dg'] in ["y", "Y"]:
                 values["overload_dg"]= output['overload_dg']
-            logger.info('power cut details success')
+            logger.info(values)
             return values
         except Exception as e:
             logger.info("error in power cut details",e)
@@ -269,7 +288,7 @@ class OpenAIBot:
                     "type": "function",
                     "function": {
                         "name": "consumption",
-                        "description": "Retrieve detailed consumption information including generator and grid readings, daily and monthly units, amounts, fixed charges, and last updated timestamps.",
+                        "description": "Retrieve detailed consumption information including current grid reading, generator and grid readings, daily and monthly units, amounts, fixed charges, and last updated timestamps.",
                         "parameters": {
                             "type": "object",
                             "properties": {},  # No properties needed as it takes no parameters
