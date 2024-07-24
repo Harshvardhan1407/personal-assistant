@@ -8,6 +8,7 @@ import requests
 import json
 import re
 import logging
+import config
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -53,7 +54,8 @@ class OpenAIBot:
     
     def login_api(self):
         try:
-            url = os.getenv("login_api") 
+            # url = os.getenv("login_api")
+            url = config.login_api
             response = requests.get(url )
             if response.status_code == 200:
                 return response.json()['resource']
@@ -156,7 +158,8 @@ class OpenAIBot:
     def daily_data(self):
         """ daily data"""
         try:
-            url = os.getenv("daily_api")
+            # url = os.getenv("daily_api")
+            url = config.daily_api
             response = requests.get(url)
             if response.status_code == 200:
                 logger.info("daily data fetched")
@@ -167,7 +170,8 @@ class OpenAIBot:
     def monthly_data(self):
         """ monthly data"""
         try:
-            url = os.getenv("monthly_api")
+            # url = os.getenv("monthly_api")
+            url = config.monthly_api
             response = requests.get(url)
             if response.status_code == 200:
                 logger.info("monthly data fetched")
