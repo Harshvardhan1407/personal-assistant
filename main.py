@@ -1,5 +1,7 @@
 from openai import OpenAI
 import os
+from dotenv import load_dotenv
+load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # from common import crawl , data_cleaning, ada_embedding
 import numpy as np
@@ -9,8 +11,7 @@ import json
 import re
 import logging
 import config
-from dotenv import load_dotenv
-load_dotenv()
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='chatbot.log', filemode='w', level=logging.INFO,format='%(asctime)s %(message)s')
