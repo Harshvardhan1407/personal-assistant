@@ -164,6 +164,7 @@ class OpenAIBot:
 
     def generate_response(self, prompt):
         # Add user prompt to conversation
+
         self.add_message("user", prompt)
         tools = [
                 {
@@ -263,6 +264,7 @@ class OpenAIBot:
                 tools=tools,
                 tool_choice="auto"  # auto is default, but we'll be explicit
             )
+            print(response)
             response_message = response.choices[0].message
 
             self.add_message("assistant", response_message.content)
