@@ -86,10 +86,11 @@ class OpenAIBot:
         else:
             logger.info(f"Attempted to add a message with null content for role {role}")
 
-    def save_conversation(self, filename):
+    def save_conversation(self, filename,session_id):
         try:
             with open(filename, 'w') as file:
-                json.dump(self.conversation, file, indent=4)
+                user_chat= json.load(file)
+                json.dump(self.conversation, user_chat[session_id], indent=4)
             logger.info(f"Conversation saved to {filename}")
         except Exception as e:
             logger.error(f"Failed to save conversation: {e}")
