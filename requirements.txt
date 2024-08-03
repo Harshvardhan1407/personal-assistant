@@ -7,3 +7,4 @@ flask
 BeautifulSoup4
 requests
 python-dotenv
+flask-login
