@@ -53,7 +53,6 @@
             overflow: hidden;
         }
 
-
         .messages {
             flex: 1;
             overflow-y: auto;
@@ -72,7 +71,7 @@
             background: rgb(255, 233, 208);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            width: 80%; 
+            width: 80%;
             margin-bottom: 10px;
         }
 
@@ -186,6 +185,7 @@
             toggleInputElements(true);
             $('.messages').append('<div class="message"><div class="user">' + userMessage.replace(/\n/g, '<br>') + '</div></div>');
             $('textarea[name=message]').val('');
+            $('textarea[name=message]').focus();  // Keep the cursor in the input box
             adjustTextareaHeight();
             $('.messages').scrollTop($('.messages')[0].scrollHeight);
 
@@ -199,10 +199,12 @@
                 }
                 $('.messages').scrollTop($('.messages')[0].scrollHeight);
                 toggleInputElements(false);
+                $('textarea[name=message]').focus();  // Keep the cursor in the input box
             }).fail(function() {
                 $('.messages').append('<div class="message"><div class="bot">Something went wrong</div></div>');
                 $('.messages').scrollTop($('.messages')[0].scrollHeight);
                 toggleInputElements(false);
+                $('textarea[name=message]').focus();  // Keep the cursor in the input box
             });
         });
 
