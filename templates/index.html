@@ -39,11 +39,29 @@
         .header {
             padding: 10px;
             text-align: center;
+            position: relative;
             background: linear-gradient(45deg, #F5F7F8, #F5F7F8);
-            color:#092635 ;
+            color: #092635;
             font-size: 16px;
             border-radius: 25px;
             text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .logout-button {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            padding: 10px 20px;
+            font-size: 13px;
+            border: none;
+            background: #2a5298;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+
+        .logout-button:hover {
+            background: #1e3c72;
         }
 
         .content {
@@ -148,6 +166,7 @@
 <body>
     <div class="header">
         <h1>Chatbot</h1>
+        <button class="logout-button" onclick="logout()">Logout</button>
     </div>
     <div class="content">
         <div class="messages">
@@ -218,6 +237,11 @@
                 e.preventDefault();
             }
         });
+
+        function logout() {
+            // Implement logout functionality here
+            alert('Logout button clicked');
+        }
 
         adjustTextareaHeight();
     </script>
