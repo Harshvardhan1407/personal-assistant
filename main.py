@@ -24,7 +24,8 @@ class OpenAIBot:
         if session_id not in self.conversations:
             self.conversations[session_id] = chatbot_prompt.prompt.copy()  # Initialize conversation with a system message
             logger.info(f"Started new conversation with session_id: {session_id}")
-
+        else:
+            self.conversations[session_id]= chatbot_prompt.prompt.copy()
     def add_message(self, session_id, role, content):
         if content is not None:
             self.conversations[session_id].append({"role": role, "content": content})
