@@ -11,3 +11,4 @@ embeddings_utils.py
 test.ipynb
 /notebooks
 config.py
+flask_session
