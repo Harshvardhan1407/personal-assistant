@@ -25,26 +25,70 @@
             background: transparent;
         }
 
+        /* Three-Dot Loader Styles */
+        .dot-loader {
+            display: none;
+            text-align: center;
+            font-size: 16px;
+            color: #092635;
+            margin-top: 10px;
+        }
+
+        .dot-loader span {
+            animation: blink 1.4s infinite both;
+        }
+
+        .dot-loader span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .dot-loader span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 80%, 100% {
+                opacity: 0;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
             background-color: #F5F7F8;
-            color: #F5F7F8;
+            color: #092635;
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
 
         .header {
-            padding: 10px;
-            text-align: center;
+            padding: 20px;
+            text-align: left;
+            background: linear-gradient(45deg, #2a5298, #3FA2F6);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
             position: relative;
-            background: linear-gradient(45deg, #F5F7F8, #F5F7F8);
-            color: #092635;
-            font-size: 16px;
-            border-radius: 25px;
-            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+        }
+
+        .header .title {
+            font-size: 36px;
+            margin-right: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            margin-left: 5px;
+            
         }
 
         .logout-button {
@@ -54,14 +98,15 @@
             padding: 10px 20px;
             font-size: 13px;
             border: none;
-            background: #2a5298;
+            background: #ff5c5c;
             color: white;
             cursor: pointer;
             border-radius: 10px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
         }
 
         .logout-button:hover {
-            background: #1e3c72;
+            background: #e04e4e;
         }
 
         .content {
@@ -165,7 +210,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>Chatbot</h1>
+        <div class="title">Xenia</div>
+        <div class="subtitle">- the AI Assistant of Radius</div>
         <button class="logout-button" onclick="logout()">Logout</button>
     </div>
     <div class="content">
@@ -184,6 +230,16 @@
         function toggleInputElements(disabled) {
             $('textarea[name=message]').prop('disabled', disabled);
             $('input[type=submit]').prop('disabled', disabled);
+        }
+
+        function showLoader() {
+            $('.messages').append('<div class="message"><div class="dot-loader">Loading<span>.</span><span>.</span><span>.</span></div></div>');
+            $('.dot-loader').fadeIn();
+            $('.messages').scrollTop($('.messages')[0].scrollHeight);
+        }
+
+        function replaceLoaderWithBotMessage(response) {
+            $('.dot-loader').parent().html('<div class="bot">' + response.replace(/\n/g, '<br>') + '</div>');
         }
 
         function adjustTextareaHeight() {
@@ -208,20 +264,20 @@
             adjustTextareaHeight();
             $('.messages').scrollTop($('.messages')[0].scrollHeight);
 
+            showLoader();
+
             $.post("/chat", {
                 prompt: userMessage
             }, function(response) {
                 if (response.startsWith("Error:")) {
-                    $('.messages').append('<div class="message"><div class="bot">Something went wrong</div></div>');
+                    replaceLoaderWithBotMessage("Something went wrong");
                 } else {
-                    $('.messages').append('<div class="message"><div class="bot">' + response.replace(/\n/g, '<br>') + '</div></div>');
+                    replaceLoaderWithBotMessage(response);
                 }
-                $('.messages').scrollTop($('.messages')[0].scrollHeight);
                 toggleInputElements(false);
                 $('textarea[name=message]').focus();  // Keep the cursor in the input box
             }).fail(function() {
-                $('.messages').append('<div class="message"><div class="bot">Something went wrong</div></div>');
-                $('.messages').scrollTop($('.messages')[0].scrollHeight);
+                replaceLoaderWithBotMessage("Something went wrong");
                 toggleInputElements(false);
                 $('textarea[name=message]').focus();  // Keep the cursor in the input box
             });
@@ -230,6 +286,7 @@
         $('textarea[name=message]').on('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
+
                 $('form').submit();
             } else if (e.key === 'Enter' && e.shiftKey) {
                 document.execCommand('insertText', false, '\n');
@@ -240,7 +297,7 @@
 
         function logout() {
             // Implement logout functionality here
-            alert('Logout button clicked');
+            window.location.href = "/logout";
         }
 
         adjustTextareaHeight();
