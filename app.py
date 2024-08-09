@@ -24,10 +24,12 @@ def get_conversation_filename():
 def load_conversation(filename):
     try:
         if os.path.exists(filename):
-            with open(filename, 'r') as file:
-                # logger.info(f"{filename} file found and loaded")
-                return json.load(file)
-            
+            try:
+                with open(filename, 'r') as file:
+                    return json.load(file)
+            except Exception as e:
+                logger.info(f"{filename} file is not readable")
+                return {}
         else:
             with open(filename, "w") as file:
                 logger.info(f"{filename} file not found, creating a new file")
@@ -39,6 +41,7 @@ def load_conversation(filename):
     
 def save_conversation(filename, conversation):
     try:
+        # print(conversation)
         with open(filename, 'w') as file:
             json.dump(conversation, file, indent=4)
     except Exception as e:
@@ -89,26 +92,32 @@ def chat():
             
         username = session['username']
         prompt = request.form['prompt']
-
         # User can stop the chat by sending 'End Chat' as a Prompt
         if prompt.upper() == 'END CHAT':
             return 'END CHAT'
         
         response = chatbot.generate_response(username, prompt)
-
+        # print(1)
         filename = get_conversation_filename()
+        # print(2)
+
         conversation_data = load_conversation(filename)
+        # print(3)
+
         if username not in conversation_data:
             conversation_data[username] = []
         conversation_data[username].append({"prompt": prompt, "response": response})
         
         # Save the updated conversation data
         save_conversation(filename, conversation_data)
+        # print("app response:", response)
         return response
     except Exception as e:
         logger.info("error in chat:",e)
         return "An error occurred", 500
-
-# 14:31
+    
+def username():
+    return session['username']
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
+    
