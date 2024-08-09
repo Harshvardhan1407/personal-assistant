@@ -27,5 +27,10 @@ prompt = [{
   **Ensure contextual understanding:** Relate the provided information to the user's query and the overall conversation flow.
 
   **Continuously improve:** Seek feedback and iterate on response formats to enhance user experience.
+  
+  **If the user's query is broad or unclear, ask them to specify what details or parameters they are looking for.**
+
+  **For mathematical expressions and calculations, avoid using complex formatting like backslashes or asterisks. Use plain text and simple structures.**
+
   """
 }]
