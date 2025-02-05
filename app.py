@@ -1,123 +1,51 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-from flask_session import Session
-from main import OpenAIBot, logger
-import os
-from datetime import datetime, timedelta
-import json
-app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
+# from logger import logger
+import traceback
+import asyncio  # Import asyncio to run async functions
+from main_chatbot import CHATBOT
+from common_functions import clean_response, retrieve_context, run_tts, play_audio,get_response_from_rag
+from config_toolcall import tools
+chatbot = CHATBOT()
+chatbot_components = chatbot.initialize_chatbot()
 
-# List of users
-users = {
-    'amit': 'amit', 'akhilesh': 'akhilesh', 'akshay': 'akshay', 'anshu': 'anshu',
-    'ashutosh': 'ashutosh', 'dolly': 'dolly', 'harsh': 'harsh', 'hridendra': 'hridendra',
-    'pallav': 'pallav', 'pranav': 'pranav', 'rahul': 'rahul', 'shubham': 'shubham',
-    'shubhangi': 'shubhangi', 'surbhi': 'surbhi', 'yash': 'yash', 'zaira': 'zaira'
-}
-chatbot = OpenAIBot(os.getenv("GPT_MODEL"))
-
-def get_conversation_filename():
-    return f'conversation_{datetime.now().strftime("%Y_%m_%d")}.json'
-
-def load_conversation(filename):
+while True:
     try:
-        if os.path.exists(filename):
-            try:
-                with open(filename, 'r') as file:
-                    return json.load(file)
-            except Exception as e:
-                logger.info(f"{filename} file is not readable")
-                return {}
-        else:
-            with open(filename, "w") as file:
-                logger.info(f"{filename} file not found, creating a new file")
-                json.dump({}, file)
-            return {}                
-    except Exception as e:
-        logger.info("error in load_conversation:", e)
-        return {}
-    
-def save_conversation(filename, conversation):
-    try:
-        # print(conversation)
-        with open(filename, 'w') as file:
-            json.dump(conversation, file, indent=4)
-    except Exception as e:
-        logger.info("error in save_conversation:", e)
+        input_query = input("user query: ")
+        if input_query == "end":
+            break
+        if "audio" in input_query:
+            play_audio()
+        response = chatbot_components['llm_with_tool'].invoke(input_query)
+        print(f"content: {response.content}\ntool_call: {response.tool_calls} \nmessage: {response.response_metadata['message']}")
+        
+        
+        if response.tool_calls and len(response.tool_calls) > 0:
+            tool_call = response.tool_calls[0]  # Assuming one tool call
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
 
-@app.route('/')
-def index():
-    try:
-        if 'username' not in session:
-            return redirect(url_for('login'))
-        return render_template('index.html')
-    except Exception as e:
-        logger.info("error in index:", e)
+            print(f"🔧 Tool to Execute: {tool_name} with args: {tool_args}")
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    try:
-        if request.method == 'POST':
-            username = request.form['username']
-            password = request.form['password']
-            if username in users and users[username] == password:
-                session['username'] = username
-                filename = get_conversation_filename()
-                main_conversation = load_conversation(filename)
-                if username in main_conversation:
-                    chatbot.conversations[username] = main_conversation[username]
-                return redirect(url_for('index'))
+            # Execute Tool Function Dynamically
+            tool_dict  = {i['name']: i["function"] for i in tools}
+            # print("too_dict:", tool_dict)
+            if tool_name in tool_dict:
+                # print("tool_name",tool_name)
+                result = tool_dict[tool_name](**tool_args)
+                if tool_name == "general_query":
+                    result = chatbot_components['llm_model'].invoke(result['user_input']).content
+                if tool_name == "retrieve_information":
+                    result = get_response_from_rag(chatbot_components['rag_chain'],
+                                                   chatbot_components['vector_store'],
+                                                   question= result['user_input'],
+                                                    )
+                     
             else:
-                return 'Invalid username or password', 401
-        return render_template('login.html')
+                result = "Error: Tool not found."
+
+            print("AI response :", result)
+
+        else:
+            print("AI Response:", response.content)
     except Exception as e:
-        logger.info("error in login:", e)
-        return "An error occurred", 500
-
-@app.route('/logout')
-def logout():
-    try:
-        session.pop('username', None)
-        return redirect(url_for('login'))
-    except Exception as e:
-        logger.info("error in logout:", e)
-
-@app.route('/chat', methods=['POST'])
-def chat():
-    try:
-        if 'username' not in session:
-            return redirect(url_for('login'))
-            
-        username = session['username']
-        prompt = request.form['prompt']
-        # User can stop the chat by sending 'End Chat' as a Prompt
-        if prompt.upper() == 'END CHAT':
-            return 'END CHAT'
-        
-        response = chatbot.generate_response(username, prompt)
-        # print(1)
-        filename = get_conversation_filename()
-        # print(2)
-
-        conversation_data = load_conversation(filename)
-        # print(3)
-
-        if username not in conversation_data:
-            conversation_data[username] = []
-        conversation_data[username].append({"prompt": prompt, "response": response})
-        
-        # Save the updated conversation data
-        save_conversation(filename, conversation_data)
-        # print("app response:", response)
-        return response
-    except Exception as e:
-        logger.info("error in chat:",e)
-        return "An error occurred", 500
-    
-def username():
-    return session['username']
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
-    
+        print(f"error occured: {e}",)
+        traceback.print_exc()  # This will print the full stack trace

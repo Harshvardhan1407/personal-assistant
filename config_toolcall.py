@@ -1,89 +1,64 @@
-tools = [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "consumer_details",
-                        "description": "Fetches consumer details, grid_reading, balance based on the request.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-# 1
-                 {
-                    "type": "function",
-                    "function": {
-                        "name": "notifiation",
-                        "description": "what notification are enabled for me",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-# 2
-                 {
-                    "type": "function",
-                    "function": {
-                        "name": "balance_recharge",
-                        "description": "give me my balance or recharge related query",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-# 3
-                 {
-                    "type": "function",
-                    "function": {
-                        "name": "consumption",
-                        "description": "Retrieve detailed consumption information including current grid reading, generator and grid readings, daily and monthly units, amounts, fixed charges, and last updated timestamps.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-# 4
-                 {
-                    "type": "function",
-                    "function": {
-                        "name": "site_details",
-                        "description": "what are my site details",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
+from pydantic import BaseModel, Field
 
-                 {
-                    "type": "function",
-                    "function": {
-                        "name": "costumer_support",
-                        "description": "give me my customer support details",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-                 {
-                    "type": "function",
-                    "function": {
-                        "name": "power_cut",
-                        "description": "power cut or electricity outage",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
+class chatbot_tools:
+    class AddNumbersInput(BaseModel):
+        """Schema for adding two numbers."""
+        a: int = Field(..., description="First integer number")
+        b: int = Field(..., description="Second integer number")
 
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "daily_data",
-                        "description": "give me this day or  daily data",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "monthly_data",
-                        "description": "give me this month data or monthly data",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {},  # No properties needed as it takes no parameters
-                            },},},
-            ]
+
+    class WeatherDetailsInput(BaseModel):
+        """Schema for fetching weather details."""
+        location: str = Field(..., description="City or location name")
+
+
+    class RetrieveInformationInput(BaseModel):
+        """Schema for retrieving RAG information."""
+        user_input: str = Field(..., description="User's question for document retrieval")
+
+
+    # 🔹 Step 3: Define Tool Functions
+    def add_two_numbers(a: int, b: int) -> dict:
+        """Adds two numbers and returns the sum."""
+        return {"result": a + b}
+
+
+    def weather_details(location: str) -> dict:
+        """Fetches weather details for a given location."""
+        return {"location": location, "temperature": 20}
+
+
+    def retrieve_information(user_input: str) -> str:
+        """Fetches relevant information using RAG."""
+        return {"user_input": user_input}
+
+    def general_query(user_input: str) -> str:
+        """function for genral query."""
+        return {"user_input": user_input}
+
+    tools=[
+        {
+            "name": "add_two_numbers",
+            "description": "Adds two numbers", 
+            "parameters": AddNumbersInput.model_json_schema(), 
+            "function": add_two_numbers
+        },
+        {
+            "name": "weather_details", 
+            "description": "Gets weather details for a location", 
+            "parameters": WeatherDetailsInput.model_json_schema(), 
+            "function": weather_details
+            },
+        {
+            "name": "retrieve_information", 
+            "description": "Retrieves information from RAG", 
+            "parameters": RetrieveInformationInput.model_json_schema(), 
+            "function": retrieve_information
+            },
+        {
+            "name": "general_query",
+            "description": "Handles general conversational queries and provides responses based on user input.",
+            "parameters": RetrieveInformationInput.model_json_schema(), 
+            "function": general_query
+            },   
+    ]

@@ -12,3 +12,8 @@ test.ipynb
 /notebooks
 config.py
 flask_session
+/audio_samples
+/chatbot_r&d
+/r&d
+tool_call_testing.ipynb
+t.py

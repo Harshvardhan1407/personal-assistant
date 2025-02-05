@@ -1,10 +1,5 @@
-openai
-matplotlib
-pandas 
-tiktoken
-scipy
-flask
-BeautifulSoup4
-requests
-python-dotenv
-flask-login
+langchain_ollama
+langchain_community
+pypdf
+faiss-cpu
+ollama_tools
