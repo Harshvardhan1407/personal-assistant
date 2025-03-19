@@ -2,7 +2,7 @@
 import traceback
 import asyncio  # Import asyncio to run async functions
 from utils.main_chatbot import CHATBOT
-from common.common_functions import clean_response, retrieve_context, run_tts, play_audio,get_response_from_rag, get_or_create_user
+from common.common_functions import clean_response, retrieve_context, get_response_from_rag, get_or_create_user
 from config.config_toolcall import chatbot_tools
 tools = chatbot_tools.tools
 from langchain.prompts import PromptTemplate
