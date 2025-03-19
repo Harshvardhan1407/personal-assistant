@@ -1,5 +1,7 @@
+langchain_core
 langchain_ollama
 langchain_community
 pypdf
 faiss-cpu
-ollama_tools
+# ollama_tools
+pymongo
